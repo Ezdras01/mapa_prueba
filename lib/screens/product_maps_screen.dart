@@ -13,10 +13,11 @@ class ProductMapScreen extends StatefulWidget {
 }
 
 class _ProductMapScreenState extends State<ProductMapScreen> {
+  List<CAC> cacs = [];
   List<String> productos = [];
   String? productoSeleccionado;
+  CAC? cacSeleccionado;
   bool cargando = true;
-  List<CAC> cacs = [];
 
   @override
   void initState() {
@@ -34,33 +35,46 @@ class _ProductMapScreenState extends State<ProductMapScreen> {
     });
   }
 
+  List<CAC> _getFiltrados() {
+    if (productoSeleccionado == null) return [];
+    return cacs.where((c) => c.nombreProducto == productoSeleccionado).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cacsFiltrados = _getFiltrados();
+
     return ResponsiveScaffold(
-      appBar: AppBar(
-        title: const Text('Centros de Acopio'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Centros de Acopio')),
       mobile: _MobileLayout(
         productos: productos,
         productoSeleccionado: productoSeleccionado,
-        onProductoChanged: (value) => setState(() => productoSeleccionado = value),
-        cacsFiltrados: _getCACsFiltrados(),
+        onProductoChanged: (value) {
+          setState(() {
+            productoSeleccionado = value;
+            cacSeleccionado = null;
+          });
+        },
+        cacsFiltrados: cacsFiltrados,
+        cacSeleccionado: cacSeleccionado,
+        onMarkerTap: (cac) => setState(() => cacSeleccionado = cac),
         cargando: cargando,
       ),
       tablet: _TabletLayout(
         productos: productos,
         productoSeleccionado: productoSeleccionado,
-        onProductoChanged: (value) => setState(() => productoSeleccionado = value),
-        cacsFiltrados: _getCACsFiltrados(),
+        onProductoChanged: (value) {
+          setState(() {
+            productoSeleccionado = value;
+            cacSeleccionado = null;
+          });
+        },
+        cacsFiltrados: cacsFiltrados,
+        cacSeleccionado: cacSeleccionado,
+        onMarkerTap: (cac) => setState(() => cacSeleccionado = cac),
         cargando: cargando,
       ),
     );
-  }
-
-  List<CAC> _getCACsFiltrados() {
-    if (productoSeleccionado == null) return [];
-    return cacs.where((c) => c.nombreProducto == productoSeleccionado).toList();
   }
 }
 
@@ -69,6 +83,8 @@ class _MobileLayout extends StatelessWidget {
   final String? productoSeleccionado;
   final Function(String?) onProductoChanged;
   final List<CAC> cacsFiltrados;
+  final CAC? cacSeleccionado;
+  final Function(CAC) onMarkerTap;
   final bool cargando;
 
   const _MobileLayout({
@@ -76,6 +92,8 @@ class _MobileLayout extends StatelessWidget {
     required this.productoSeleccionado,
     required this.onProductoChanged,
     required this.cacsFiltrados,
+    required this.cacSeleccionado,
+    required this.onMarkerTap,
     required this.cargando,
   });
 
@@ -95,18 +113,8 @@ class _MobileLayout extends StatelessWidget {
                   onChanged: onProductoChanged,
                 ),
         ),
-        Expanded(child: CACMap(cacs: cacsFiltrados)),
-        Container(
-          padding: const EdgeInsets.all(16),
-          width: double.infinity,
-          color: Colors.blue[50],
-          child: Text(
-            productoSeleccionado == null
-                ? 'Tarjeta con información del CAC'
-                : 'Seleccionaste: $productoSeleccionado',
-            textAlign: TextAlign.center,
-          ),
-        ),
+        Expanded(child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap)),
+        CACInfoCard(cac: cacSeleccionado),
       ],
     );
   }
@@ -117,6 +125,8 @@ class _TabletLayout extends StatelessWidget {
   final String? productoSeleccionado;
   final Function(String?) onProductoChanged;
   final List<CAC> cacsFiltrados;
+  final CAC? cacSeleccionado;
+  final Function(CAC) onMarkerTap;
   final bool cargando;
 
   const _TabletLayout({
@@ -124,6 +134,8 @@ class _TabletLayout extends StatelessWidget {
     required this.productoSeleccionado,
     required this.onProductoChanged,
     required this.cacsFiltrados,
+    required this.cacSeleccionado,
+    required this.onMarkerTap,
     required this.cargando,
   });
 
@@ -148,20 +160,11 @@ class _TabletLayout extends StatelessWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: CACMap(cacs: cacsFiltrados),
+                child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap),
               ),
               Expanded(
                 flex: 1,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.blue[50],
-                  child: Text(
-                    productoSeleccionado == null
-                        ? 'Tarjeta con información del CAC'
-                        : 'Seleccionaste: $productoSeleccionado',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                child: CACInfoCard(cac: cacSeleccionado),
               ),
             ],
           ),
@@ -173,8 +176,9 @@ class _TabletLayout extends StatelessWidget {
 
 class CACMap extends StatelessWidget {
   final List<CAC> cacs;
+  final Function(CAC) onMarkerTap;
 
-  const CACMap({super.key, required this.cacs});
+  const CACMap({super.key, required this.cacs, required this.onMarkerTap});
 
   @override
   Widget build(BuildContext context) {
@@ -193,10 +197,60 @@ class CACMap extends StatelessWidget {
             width: 40,
             height: 40,
             point: LatLng(cac.lat, cac.lon),
-            child: const Icon(Icons.location_on, color: Colors.red),
+            child: GestureDetector(
+              onTap: () => onMarkerTap(cac),
+              child: const Icon(Icons.location_on, color: Colors.red),
+            ),
           )).toList(),
         )
       ],
     );
+  }
+}
+
+class CACInfoCard extends StatelessWidget {
+  final CAC? cac;
+
+  const CACInfoCard({super.key, required this.cac});
+
+  @override
+  Widget build(BuildContext context) {
+    if (cac == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+        color: Colors.blue[50],
+        child: const Text(
+          'Selecciona un marcador para ver la información',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+if (cac == null) return const SizedBox();
+
+return Container(
+  padding: const EdgeInsets.all(16),
+  width: double.infinity,
+  color: Colors.blue[50],
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text('CAC: ${cac!.cacNombre}', style: const TextStyle(fontWeight: FontWeight.bold)),
+      Text('Clave: ${cac!.cacClave}'),
+      const SizedBox(height: 8),
+      Text('Producto: ${cac!.nombreProducto}'),
+      Text('Cantidad: ${cac!.cantidad} ${cac!.unidad}'),
+      const SizedBox(height: 8),
+      Text('Técnico: ${cac!.tecnicoResponsable}'),
+      Text('📞 ${cac!.tecnicoCelular}'),
+      const SizedBox(height: 8),
+      Text('Proveedor: ${cac!.proveedor}'),
+      Text('📞 ${cac!.proveedorCelular}'),
+    ],
+  ),
+);
+
   }
 }
