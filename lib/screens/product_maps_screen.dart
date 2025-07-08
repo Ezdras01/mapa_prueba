@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import '../widgets/responsive_scaffold.dart';
+import '../services/csv_loader.dart';
 
-class ProductMapScreen extends StatelessWidget {
+class ProductMapScreen extends StatefulWidget {
   const ProductMapScreen({super.key});
+
+  @override
+  State<ProductMapScreen> createState() => _ProductMapScreenState();
+}
+
+class _ProductMapScreenState extends State<ProductMapScreen> {
+  List<String> productos = [];
+  String? productoSeleccionado;
+  bool cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarProductos();
+  }
+
+  Future<void> _cargarProductos() async {
+    final data = await CsvLoader.getUniqueProducts();
+    setState(() {
+      productos = data;
+      cargando = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,14 +35,34 @@ class ProductMapScreen extends StatelessWidget {
         title: const Text('Centros de Acopio'),
         centerTitle: true,
       ),
-      mobile: const _MobileLayout(),
-      tablet: const _TabletLayout(),
+      mobile: _MobileLayout(
+        productos: productos,
+        productoSeleccionado: productoSeleccionado,
+        onProductoChanged: (value) => setState(() => productoSeleccionado = value),
+        cargando: cargando,
+      ),
+      tablet: _TabletLayout(
+        productos: productos,
+        productoSeleccionado: productoSeleccionado,
+        onProductoChanged: (value) => setState(() => productoSeleccionado = value),
+        cargando: cargando,
+      ),
     );
   }
 }
 
 class _MobileLayout extends StatelessWidget {
-  const _MobileLayout();
+  final List<String> productos;
+  final String? productoSeleccionado;
+  final Function(String?) onProductoChanged;
+  final bool cargando;
+
+  const _MobileLayout({
+    required this.productos,
+    required this.productoSeleccionado,
+    required this.onProductoChanged,
+    required this.cargando,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +70,15 @@ class _MobileLayout extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: DropdownButton<String>(
-            value: null,
-            hint: const Text('Selecciona un producto'),
-            items: const [],
-            onChanged: null,
-          ),
+          child: cargando
+              ? const CircularProgressIndicator()
+              : DropdownButton<String>(
+                  value: productoSeleccionado,
+                  isExpanded: true,
+                  hint: const Text('Selecciona un producto'),
+                  items: productos.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                  onChanged: onProductoChanged,
+                ),
         ),
         Expanded(
           child: Container(
@@ -43,8 +90,10 @@ class _MobileLayout extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           width: double.infinity,
           color: Colors.blue[50],
-          child: const Text(
-            'Tarjeta con información del CAC',
+          child: Text(
+            productoSeleccionado == null
+                ? 'Tarjeta con información del CAC'
+                : 'Seleccionaste: $productoSeleccionado',
             textAlign: TextAlign.center,
           ),
         ),
@@ -54,7 +103,17 @@ class _MobileLayout extends StatelessWidget {
 }
 
 class _TabletLayout extends StatelessWidget {
-  const _TabletLayout();
+  final List<String> productos;
+  final String? productoSeleccionado;
+  final Function(String?) onProductoChanged;
+  final bool cargando;
+
+  const _TabletLayout({
+    required this.productos,
+    required this.productoSeleccionado,
+    required this.onProductoChanged,
+    required this.cargando,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,12 +121,15 @@ class _TabletLayout extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: DropdownButton<String>(
-            value: null,
-            hint: const Text('Selecciona un producto'),
-            items: const [],
-            onChanged: null,
-          ),
+          child: cargando
+              ? const CircularProgressIndicator()
+              : DropdownButton<String>(
+                  value: productoSeleccionado,
+                  isExpanded: true,
+                  hint: const Text('Selecciona un producto'),
+                  items: productos.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                  onChanged: onProductoChanged,
+                ),
         ),
         Expanded(
           child: Row(
@@ -84,8 +146,10 @@ class _TabletLayout extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   color: Colors.blue[50],
-                  child: const Text(
-                    'Tarjeta con información del CAC',
+                  child: Text(
+                    productoSeleccionado == null
+                        ? 'Tarjeta con información del CAC'
+                        : 'Seleccionaste: $productoSeleccionado',
                     textAlign: TextAlign.center,
                   ),
                 ),
