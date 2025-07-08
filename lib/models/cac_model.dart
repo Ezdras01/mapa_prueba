@@ -1,6 +1,6 @@
 class CAC {
   final String nombreProducto;
-  final double cantidad;
+  final int cantidad;
   final String unidad;
   final String calidad;
   final String proveedor;
@@ -29,15 +29,15 @@ class CAC {
 
   factory CAC.fromList(List<dynamic> row) {
     return CAC(
-      nombreProducto: row[0],
-      cantidad: double.tryParse(row[1].toString()) ?? 0,
-      unidad: row[2],
+      nombreProducto: row[0].toString(),
+      cantidad: int.tryParse(row[1].toString()) ?? 0,
+      unidad: row[2].toString(),
       calidad: row[3].toString(),
-      proveedor: row[4],
+      proveedor: row[4].toString(),
       proveedorCelular: row[5].toString(),
-      tecnicoResponsable: row[6],
+      tecnicoResponsable: row[6].toString(),
       tecnicoCelular: row[7].toString(),
-      cacNombre: row[8],
+      cacNombre: row[8].toString(),
       cacClave: row[9].toString(),
       lat: double.tryParse(row[10].toString()) ?? 0,
       lon: double.tryParse(row[11].toString()) ?? 0,
