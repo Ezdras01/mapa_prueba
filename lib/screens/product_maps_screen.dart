@@ -229,42 +229,61 @@ class CACInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (cac == null) {
-      return Container(
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxCardHeight = screenHeight * 0.35;
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(16),
-        width: double.infinity,
-        color: Colors.blue[50],
-        child: const Text(
-          'Selecciona un marcador para ver la información',
-          textAlign: TextAlign.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
         ),
-      );
-    }
-
-if (cac == null) return const SizedBox();
-
-return Container(
-  padding: const EdgeInsets.all(16),
-  width: double.infinity,
-  color: Colors.blue[50],
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text('CAC: ${cac!.cacNombre}', style: const TextStyle(fontWeight: FontWeight.bold)),
-      Text('Clave: ${cac!.cacClave}'),
-      const SizedBox(height: 8),
-      Text('Producto: ${cac!.nombreProducto}'),
-      Text('Cantidad: ${cac!.cantidad} ${cac!.unidad}'),
-      const SizedBox(height: 8),
-      Text('Técnico: ${cac!.tecnicoResponsable}'),
-      Text('📞 ${cac!.tecnicoCelular}'),
-      const SizedBox(height: 8),
-      Text('Proveedor: ${cac!.proveedor}'),
-      Text('📞 ${cac!.proveedorCelular}'),
-    ],
-  ),
-);
-
+        constraints: BoxConstraints(
+          maxHeight: maxCardHeight,
+          minHeight: 140,
+        ),
+        child: SingleChildScrollView(
+          child: cac == null
+              ? const Text(
+                  'Selecciona un producto y despues presiona un marcador para ver la información de un CAC.',
+                  style: TextStyle(fontSize: 16),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CAC: ${cac!.cacNombre}', style: Theme.of(context).textTheme.titleMedium),
+                    Text('Clave: ${cac!.cacClave}'),
+                    const SizedBox(height: 8),
+                    Text('Producto: ${cac!.nombreProducto}'),
+                    Text('Cantidad: ${cac!.cantidad} ${cac!.unidad}'),
+                    const Divider(height: 16),
+                    Text('Técnico: ${cac!.tecnicoResponsable}'),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, size: 16),
+                        const SizedBox(width: 4),
+                        Text(cac!.tecnicoCelular),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Text('Proveedor: ${cac!.proveedor}'),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, size: 16),
+                        const SizedBox(width: 4),
+                        Text(cac!.proveedorCelular),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
   }
 }
+
+
