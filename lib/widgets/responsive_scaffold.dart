@@ -5,12 +5,14 @@ import 'dart:io';
 class ResponsiveScaffold extends StatefulWidget {
   final Widget mobile;
   final Widget tablet;
+  final Widget tabletPortrait;
   final PreferredSizeWidget? appBar;
 
   const ResponsiveScaffold({
     super.key,
     required this.mobile,
     required this.tablet,
+    required this.tabletPortrait,
     this.appBar,
   });
 

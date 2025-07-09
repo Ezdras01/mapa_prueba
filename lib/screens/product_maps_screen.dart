@@ -74,6 +74,20 @@ class _ProductMapScreenState extends State<ProductMapScreen> {
         onMarkerTap: (cac) => setState(() => cacSeleccionado = cac),
         cargando: cargando,
       ),
+      tabletPortrait: _TabletLayout(
+        productos: productos,
+        productoSeleccionado: productoSeleccionado,
+        onProductoChanged: (value) {
+          setState(() {
+            productoSeleccionado = value;
+            cacSeleccionado = null;
+          });
+        },
+        cacsFiltrados: cacsFiltrados,
+        cacSeleccionado: cacSeleccionado,
+        onMarkerTap: (cac) => setState(() => cacSeleccionado = cac),
+        cargando: cargando,
+      ),
     );
   }
 }
