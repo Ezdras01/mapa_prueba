@@ -4,6 +4,9 @@ import 'package:latlong2/latlong.dart';
 import '../widgets/responsive_scaffold.dart';
 import '../models/cac_model.dart';
 import '../services/csv_loader.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+
+
 
 class ProductMapScreen extends StatefulWidget {
   const ProductMapScreen({super.key});
@@ -25,20 +28,25 @@ class _ProductMapScreenState extends State<ProductMapScreen> {
     _cargarDatos();
   }
 
-  Future<void> _cargarDatos() async {
-    final todos = await CsvLoader.loadCACs();
-    final listaProductos = todos.map((e) => e.nombreProducto).toSet().toList()..sort();
-    setState(() {
-      cacs = todos;
-      productos = listaProductos;
-      cargando = false;
-    });
-  }
+Future<void> _cargarDatos() async {
+  final todos = await CsvLoader.loadCACs();
+  final listaProductos = todos.map((e) => e.nombreProducto).toSet().toList()
+    ..sort();
 
-  List<CAC> _getFiltrados() {
-    if (productoSeleccionado == null) return [];
-    return cacs.where((c) => c.nombreProducto == productoSeleccionado).toList();
-  }
+  setState(() {
+    cacs = todos;
+    productos = listaProductos;
+    cargando = false;
+  });
+}
+
+
+List<CAC> _getFiltrados() {
+  if (productoSeleccionado == null) return [];
+  if (productoSeleccionado == 'Todos los productos') return cacs;
+  return cacs.where((c) => c.nombreProducto == productoSeleccionado).toList();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -120,14 +128,25 @@ class _MobileLayout extends StatelessWidget {
           child: cargando
               ? const CircularProgressIndicator()
               : DropdownButton<String>(
-                  value: productoSeleccionado,
+value: productoSeleccionado,
+
                   isExpanded: true,
                   hint: const Text('Selecciona un producto'),
-                  items: productos.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: 'Todos los productos',
+                      child: Text('Todos los productos'),
+                    ),
+                    ...productos.map(
+                      (p) => DropdownMenuItem(value: p, child: Text(p)),
+                    ),
+                  ],
                   onChanged: onProductoChanged,
                 ),
         ),
-        Expanded(child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap)),
+        Expanded(
+          child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap),
+        ),
         CACInfoCard(cac: cacSeleccionado),
       ],
     );
@@ -162,10 +181,19 @@ class _TabletLayout extends StatelessWidget {
           child: cargando
               ? const CircularProgressIndicator()
               : DropdownButton<String>(
-                  value: productoSeleccionado,
+value: productoSeleccionado,
+
                   isExpanded: true,
                   hint: const Text('Selecciona un producto'),
-                  items: productos.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: 'Todos los productos',
+                      child: Text('Todos los productos'),
+                    ),
+                    ...productos.map(
+                      (p) => DropdownMenuItem(value: p, child: Text(p)),
+                    ),
+                  ],
                   onChanged: onProductoChanged,
                 ),
         ),
@@ -176,10 +204,7 @@ class _TabletLayout extends StatelessWidget {
                 flex: 2,
                 child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap),
               ),
-              Expanded(
-                flex: 1,
-                child: CACInfoCard(cac: cacSeleccionado),
-              ),
+              Expanded(flex: 1, child: CACInfoCard(cac: cacSeleccionado)),
             ],
           ),
         ),
@@ -194,32 +219,54 @@ class CACMap extends StatelessWidget {
 
   const CACMap({super.key, required this.cacs, required this.onMarkerTap});
 
-  @override
-  Widget build(BuildContext context) {
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: const LatLng(23.6345, -102.5528),
-        initialZoom: 5.5,
+@override
+Widget build(BuildContext context) {
+  final markers = cacs.map(
+    (cac) => Marker(
+      width: 40,
+      height: 40,
+      point: LatLng(cac.lat, cac.lon),
+      child: GestureDetector(
+        onTap: () => onMarkerTap(cac),
+        child: const Icon(Icons.location_on, color: Colors.red),
       ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.mapa_prueba',
+    ),
+  ).toList();
+
+  return FlutterMap(
+    options: MapOptions(
+      initialCenter: const LatLng(23.6345, -102.5528),
+      initialZoom: 5.5,
+    ),
+    children: [
+      TileLayer(
+        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        userAgentPackageName: 'com.example.mapa_prueba',
+      ),
+      MarkerClusterLayerWidget(
+        options: MarkerClusterLayerOptions(
+          maxClusterRadius: 120,
+          size: const Size(40, 40),
+          markers: markers,
+          builder: (context, cluster) {
+            return Container(
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${cluster.length}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            );
+          },
         ),
-        MarkerLayer(
-          markers: cacs.map((cac) => Marker(
-            width: 40,
-            height: 40,
-            point: LatLng(cac.lat, cac.lon),
-            child: GestureDetector(
-              onTap: () => onMarkerTap(cac),
-              child: const Icon(Icons.location_on, color: Colors.red),
-            ),
-          )).toList(),
-        )
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
+
 }
 
 class CACInfoCard extends StatelessWidget {
@@ -242,10 +289,7 @@ class CACInfoCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
         ),
-        constraints: BoxConstraints(
-          maxHeight: maxCardHeight,
-          minHeight: 140,
-        ),
+        constraints: BoxConstraints(maxHeight: maxCardHeight, minHeight: 140),
         child: SingleChildScrollView(
           child: cac == null
               ? const Text(
@@ -255,7 +299,10 @@ class CACInfoCard extends StatelessWidget {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('CAC: ${cac!.cacNombre}', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'CAC: ${cac!.cacNombre}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     Text('Clave: ${cac!.cacClave}'),
                     const SizedBox(height: 8),
                     Text('Producto: ${cac!.nombreProducto}'),
@@ -285,5 +332,3 @@ class CACInfoCard extends StatelessWidget {
     );
   }
 }
-
-
