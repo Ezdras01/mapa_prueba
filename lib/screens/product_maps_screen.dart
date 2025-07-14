@@ -53,7 +53,7 @@ List<CAC> _getFiltrados() {
     final cacsFiltrados = _getFiltrados();
 
     return ResponsiveScaffold(
-      appBar: AppBar(title: const Text('Centros de Acopio')),
+      appBar: AppBar(title: const Text('CACs por Producto')),
       mobile: _MobileLayout(
         productos: productos,
         productoSeleccionado: productoSeleccionado,
@@ -262,8 +262,16 @@ class CACMap extends StatelessWidget {
             options: MarkerClusterLayerOptions(
               maxClusterRadius: 120,
               size: const Size(40, 40),
+              disableClusteringAtZoom: 15, // Ajusta según necesidad
+              showPolygon: false,
               markers: markers,
               builder: (context, markers) {
+                if (markers.length <= 15) {
+                  // Mostrar marcadores individuales para clusters pequeños
+                  return MarkerLayer(
+                    markers: markers,
+                  );
+                }
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.blue,
@@ -277,6 +285,10 @@ class CACMap extends StatelessWidget {
                   ),
                 );
               },
+              polygonOptions: PolygonOptions(
+                borderColor: Colors.blue,
+                color: Colors.blue.withAlpha((0.1 * 255).toInt()),
+              ),
             ),
           )
         else
@@ -285,6 +297,7 @@ class CACMap extends StatelessWidget {
     );
   }
 }
+
 
 class CACInfoCard extends StatelessWidget {
   final CAC? cac;
