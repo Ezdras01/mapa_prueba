@@ -145,7 +145,11 @@ value: productoSeleccionado,
                 ),
         ),
         Expanded(
-          child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap),
+          child: CACMap(
+            cacs: cacsFiltrados,
+            onMarkerTap: onMarkerTap,
+            productoSeleccionado: productoSeleccionado,
+          ),
         ),
         CACInfoCard(cac: cacSeleccionado),
       ],
@@ -202,7 +206,11 @@ value: productoSeleccionado,
             children: [
               Expanded(
                 flex: 2,
-                child: CACMap(cacs: cacsFiltrados, onMarkerTap: onMarkerTap),
+                child: CACMap(
+                  cacs: cacsFiltrados,
+                  onMarkerTap: onMarkerTap,
+                  productoSeleccionado: productoSeleccionado,
+                ),
               ),
               Expanded(flex: 1, child: CACInfoCard(cac: cacSeleccionado)),
             ],
@@ -216,57 +224,66 @@ value: productoSeleccionado,
 class CACMap extends StatelessWidget {
   final List<CAC> cacs;
   final Function(CAC) onMarkerTap;
+  final String? productoSeleccionado;
 
-  const CACMap({super.key, required this.cacs, required this.onMarkerTap});
+  const CACMap({
+    super.key,
+    required this.cacs,
+    required this.onMarkerTap,
+    required this.productoSeleccionado,
+  });
 
-@override
-Widget build(BuildContext context) {
-  final markers = cacs.map(
-    (cac) => Marker(
-      width: 40,
-      height: 40,
-      point: LatLng(cac.lat, cac.lon),
-      child: GestureDetector(
-        onTap: () => onMarkerTap(cac),
-        child: const Icon(Icons.location_on, color: Colors.red),
-      ),
-    ),
-  ).toList();
-
-  return FlutterMap(
-    options: MapOptions(
-      initialCenter: const LatLng(23.6345, -102.5528),
-      initialZoom: 5.5,
-    ),
-    children: [
-      TileLayer(
-        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        userAgentPackageName: 'com.example.mapa_prueba',
-      ),
-      MarkerClusterLayerWidget(
-        options: MarkerClusterLayerOptions(
-          maxClusterRadius: 120,
-          size: const Size(40, 40),
-          markers: markers,
-          builder: (context, cluster) {
-            return Container(
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '${cluster.length}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    final markers = cacs.map(
+      (cac) => Marker(
+        width: 40,
+        height: 40,
+        point: LatLng(cac.lat, cac.lon),
+        child: GestureDetector(
+          onTap: () => onMarkerTap(cac),
+          child: const Icon(Icons.location_on, color: Colors.red),
         ),
       ),
-    ],
-  );
-}
+    ).toList();
 
+    return FlutterMap(
+      options: MapOptions(
+        initialCenter: const LatLng(23.6345, -102.5528),
+        initialZoom: 5.5,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.mapa_prueba',
+        ),
+        if (productoSeleccionado == 'Todos los productos')
+          MarkerClusterLayerWidget(
+            options: MarkerClusterLayerOptions(
+              maxClusterRadius: 120,
+              size: const Size(40, 40),
+              markers: markers,
+              builder: (context, markers) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      markers.length.toString(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
+            ),
+          )
+        else
+          MarkerLayer(markers: markers),
+      ],
+    );
+  }
 }
 
 class CACInfoCard extends StatelessWidget {
